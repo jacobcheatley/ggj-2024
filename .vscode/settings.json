@@ -1,0 +1,22 @@
+{
+    // Python
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            // "source.organizeImports": "explicit"
+            "source.organizeImports": "always"
+        },
+        // "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.rulers": [
+            80,
+            120
+        ]
+    },
+    "ruff.codeAction.fixViolation": {
+        "enable": true
+    },
+    "ruff.enable": true,
+    "ruff.organizeImports": true,
+    "ruff.lint.run": "onSave",
+}
