@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 HTML_DIR = Path("ggj-2024/html")
 STATIC_DIR = Path("ggj-2024/static")
 
-MAX_PLAYERS = 8
+MAX_PLAYERS = 4
 
 
 class ConnectionManager:
