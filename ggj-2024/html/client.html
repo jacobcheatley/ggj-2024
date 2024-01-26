@@ -63,6 +63,9 @@
                                         data.name = j.data;
                                         document.title = `Client - ${data.name}`;
                                         break;
+                                    case "debug":
+                                        console.debug(j.data);
+                                        break;
                                     case "error":
                                         toast(j.data, "red");
                                         break;
@@ -90,9 +93,38 @@
                     }
                 ),
                 new State(
+                    "WAIT",
+                    {
+                        enter: () => {
+                            heading_element.textContent = "Waiting..."
+                            input_element.style.display = "none";
+                            submit_button.style.display = "none";
+                            toast("Waiting...");
+
+                        },
+                        exit: () => {
+                            input_element.style.display = "block";
+                            submit_button.style.display = "block";
+                            toast("");
+                        }
+                    }
+                ),
+                new State(
                     "JOKE",
                     {
-                        submit: () => { console.log("JOKE SUBMIT") },
+                        submit: () => {
+                            console.log("JOKE SUBMIT");
+
+                            let joke = input_element.value;
+                            if (joke == undefined || joke == '' || joke.length == 0)
+                            {
+                                toast("Joke can't be empty", "red");
+                                return;
+                            }
+                            data.ws.send(JSON.stringify({"type": "joke", "data": joke}));
+
+                            state_machine.transition("WAIT");
+                        },
                         enter: () => {
                             heading_element.textContent = "Enter Joke";
                             input_element.value = "";

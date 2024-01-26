@@ -9,7 +9,7 @@
         <div>
             <h1 id="heading">Connecting...</h1>
             <p id="toast">...</p>
-            <button id="submit">Button</button>
+            <button id="submit">Start</button>
         </div>
 
         <script>
@@ -24,7 +24,9 @@
             // Local Variables
             let data = {
                 ws: null,
-                players: []
+                players: [],
+                players_submitted_jokes: {},
+                joke_data: null
             }
 
             // Helper Functions
@@ -42,10 +44,22 @@
             let state_machine = new StateMachine();
             let state_list = [
                 new State(
-                    "START",
+                    "INIT",
                     {
                         enter: () => { 
+                            submit_button.style.display = "block";
+                            submit_button.textContent = "Start";
+                            
+                            data = {
+                                ws: null,
+                                players: [],
+                                players_submitted_jokes: {},
+                                joke_data: null
+                            }
+
                             heading_element.textContent = "Connecting...";
+                            submit_button.style.display = "block";
+
                             let ws = new WebSocket(`ws://${window.location.host}/ws_server`);
                             ws.onmessage = e => {
                                 let j = JSON.parse(e.data);
@@ -56,6 +70,17 @@
                                     case "players":
                                         data.players = j.data;
                                         toast(`Players ${data.players.length}/${MAX_PLAYERS} (${data.players.join(", ")})`);
+                                        break;
+                                    case "submitted_joke":
+                                        let player = j.data.player;
+                                        data.players_submitted_jokes[player] = true
+                                        toast(`Submitted jokes: ${JSON.stringify(data.players_submitted_jokes)}`);
+                                        break;
+                                    case "set_jokes":
+                                        data.joke_data = j.data;
+                                        break;
+                                    case "debug":
+                                        console.debug(j.data);
                                         break;
                                     case "error":
                                         toast(j.data, "red");
@@ -71,25 +96,83 @@
                                         break;
                                 }
                             };
+                            ws.onopen = e => {
+                                data.ws = ws;
+                                data.ws.send(JSON.stringify({"type": "state_set", "data": "INIT"}));
+                            };
                             ws.onclose = e => {
                                 console.log(`Close ${e.data}`);
                                 data.ws = null;
-                            }
-                            data.ws = ws;
+                            };
                         }
                     }
                 ),
                 new State(
-                    "WAIT",
+                    "WAIT_FOR_PLAYERS",
                     {
                         enter: () => {
+                            data.ws.send(JSON.stringify({"type": "state_set", "data": "WAIT_FOR_PLAYERS"}));
+
                             heading_element.textContent = "Waiting for Players...";
+                        },
+                        submit: () => {
+                            if (data.players.length < 2)
+                                return;
+                            
+                            data.ws.send(JSON.stringify({"type": "start"}));
+                        }
+                    }
+                ),
+                new State(
+                    "START_GAME",
+                    {
+                        enter: () => {
+                            data.ws.send(JSON.stringify({"type": "state_set", "data": "START_GAME"}));
+
+                            heading_element.textContent = "Start Game (Play Animations Here)";
+                            submit_button.style.display = "none";
+
+                            // Mock start game animation
+                            setTimeout(() => {state_machine.transition("ASK_FOR_JOKE")}, 3000);
+                        },
+                        exit: () => {
+                            submit_button.style.display = "block";
+                        }
+                    }
+                ),
+                new State(
+                    "ASK_FOR_JOKE",
+                    {
+                        enter: () => {
+                            data.ws.send(JSON.stringify({"type": "state_set", "data": "ASK_FOR_JOKE"}));
+
+                            submit_button.style.display = "block";
+                            submit_button.textContent = "Skip";
+                            heading_element.textContent = "Asking for Joke";
+                            toast("Please tell me a joke about XYZ.");
+                        },
+                        submit: () => {
+                            data.ws.send(JSON.stringify({"type": "skip"}));
+                        }
+                    }
+                ),
+                new State(
+                    "TELL_JOKES",
+                    {
+                        enter: () => {
+                            data.ws.send(JSON.stringify({"type": "state_set", "data": "TELL_JOKES"}));
+
+                            data.players.forEach(player_name => {
+                                let player_joke = data.joke_data[player_name];
+                                console.log(`Player ${player_name}\nJoke ${JSON.stringify(player_joke)}`);
+                                // TODO animations, waiting, rating etc
+                            });
                         }
                     }
                 )
             ]
             state_machine.add_states(state_list);
-            state_machine.transition("START");
+            state_machine.transition("INIT");
 
             // Event Listeners
             submit_button.addEventListener("click", () => state_machine.submit());
