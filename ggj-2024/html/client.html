@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Comedy Court Client</title>
+        <script src="static/script.js"></script>
+    </head>
+    <body>
+        <h1>Comedy Court Client</h1>
+        <div>
+            <h1 id="heading">Enter Name</h1>
+            <p id="toast">...</p>
+            <input type="text" id="input-text" autocomplete="off" />
+            <button id="submit">Submit</button>
+        </div>
+
+        <script>
+            // Elements
+            let heading_element = document.getElementById("heading");
+            let toast_element = document.getElementById("toast")
+            let input_element = document.getElementById("input-text");
+            let submit_button = document.getElementById("submit");
+
+            // Local Variables
+            let data = {
+                name: null,
+                ws: null
+            }
+
+            // Helper Functions
+            let toast = (message, color) => {
+                console.log(`Toast ${message}`);
+                toast_element.textContent = message;
+                if (color != undefined) {
+                    toast_element.style.color = color;
+                } else {
+                    toast_element.style.color = "black";
+                }
+            }
+
+            // State Machine Setup
+            let state_machine = new StateMachine();
+            let state_list = [
+                new State(
+                    "NAME",
+                    {
+                        submit: () => { 
+                            console.log("NAME SUBMIT");
+
+                            let name = input_element.value;
+                            if (name == undefined || name == '' || name.length == 0)
+                            {
+                                toast("Name can't be empty", "red");
+                                return;
+                            }
+
+                            data.name = name;
+                            let ws = new WebSocket(`ws://${window.location.host}/ws/${data.name}`);
+                            ws.onmessage = e => {
+                                let j = JSON.parse(e.data);
+                                console.log(`Message: ${JSON.stringify(j)}`);
+                                switch (j.type) {
+                                    case "error":
+                                        toast(j.text, "red");
+                                        break;
+                                    case "message":
+                                        toast(j.text);
+                                        break;
+                                    case "state":
+                                        state_machine.transition(j.state);
+                                        break;
+                                }
+                            };
+                            ws.onclose = e => {
+                                console.log(`Close ${e.data}`);
+                                data.ws = null;
+                            }
+                            data.ws = ws;
+                        },
+                        enter: () => { heading_element.textContent = "Enter Name" }
+                    }
+                ),
+                new State(
+                    "JOKE",
+                    {
+                        submit: () => { console.log("JOKE SUBMIT") },
+                        enter: () => { heading_element.textContent = "Enter Joke" }
+                    }
+                ),
+            ]
+            state_machine.add_states(state_list);
+            state_machine.transition("NAME");
+
+            // Event Listeners
+            submit_button.addEventListener("click", () => state_machine.submit());
+            input_element.addEventListener("keypress", (e) => {
+                if (e.key == 'Enter') {
+                    state_machine.submit();
+                }
+            });
+        </script>
+    </body>
+</html>
