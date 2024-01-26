@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Comedy Court Client</title>
+        <title>Client - Comedy Court</title>
         <script src="static/script.js"></script>
     </head>
     <body>
@@ -52,21 +52,28 @@
                                 toast("Name can't be empty", "red");
                                 return;
                             }
+                            name = encodeURIComponent(name.toUpperCase());
 
-                            data.name = name;
-                            let ws = new WebSocket(`ws://${window.location.host}/ws/${data.name}`);
+                            let ws = new WebSocket(`ws://${window.location.host}/ws/${name}`);
                             ws.onmessage = e => {
                                 let j = JSON.parse(e.data);
                                 console.log(`Message: ${JSON.stringify(j)}`);
                                 switch (j.type) {
+                                    case "name":
+                                        data.name = j.data;
+                                        document.title = `Client - ${data.name}`;
+                                        break;
                                     case "error":
-                                        toast(j.text, "red");
+                                        toast(j.data, "red");
                                         break;
                                     case "message":
-                                        toast(j.text);
+                                        toast(j.data);
                                         break;
                                     case "state":
-                                        state_machine.transition(j.state);
+                                        state_machine.transition(j.data);
+                                        break;
+                                    default:
+                                        console.warn(`Unsupported ${JSON.stringify(j)}`);
                                         break;
                                 }
                             };
@@ -76,14 +83,20 @@
                             }
                             data.ws = ws;
                         },
-                        enter: () => { heading_element.textContent = "Enter Name" }
+                        enter: () => {
+                            heading_element.textContent = "Enter Name";
+                            input_element.value = "";
+                        }
                     }
                 ),
                 new State(
                     "JOKE",
                     {
                         submit: () => { console.log("JOKE SUBMIT") },
-                        enter: () => { heading_element.textContent = "Enter Joke" }
+                        enter: () => {
+                            heading_element.textContent = "Enter Joke";
+                            input_element.value = "";
+                        }
                     }
                 ),
             ]

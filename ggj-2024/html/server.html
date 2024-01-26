@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Server - Comedy Court</title>
+        <script src="static/script.js"></script>
+    </head>
+    <body>
+        <h1>Comedy Court Server</h1>
+        <div>
+            <h1 id="heading">Connecting...</h1>
+            <p id="toast">...</p>
+            <button id="submit">Button</button>
+        </div>
+
+        <script>
+            // Constants
+            let MAX_PLAYERS = 8;
+
+            // Elements
+            let heading_element = document.getElementById("heading");
+            let toast_element = document.getElementById("toast")
+            let submit_button = document.getElementById("submit");
+
+            // Local Variables
+            let data = {
+                ws: null,
+                players: []
+            }
+
+            // Helper Functions
+            let toast = (message, color) => {
+                console.log(`Toast ${message}`);
+                toast_element.textContent = message;
+                if (color != undefined) {
+                    toast_element.style.color = color;
+                } else {
+                    toast_element.style.color = "black";
+                }
+            }
+
+            // State Machine Setup
+            let state_machine = new StateMachine();
+            let state_list = [
+                new State(
+                    "START",
+                    {
+                        enter: () => { 
+                            heading_element.textContent = "Connecting...";
+                            let ws = new WebSocket(`ws://${window.location.host}/ws_server`);
+                            ws.onmessage = e => {
+                                let j = JSON.parse(e.data);
+                                console.log(`Message: ${JSON.stringify(j)}`);
+                                switch (j.type) {
+                                    case "player_join":
+                                        break
+                                    case "players":
+                                        data.players = j.data;
+                                        toast(`Players ${data.players.length}/${MAX_PLAYERS} (${data.players.join(", ")})`);
+                                        break;
+                                    case "error":
+                                        toast(j.data, "red");
+                                        break;
+                                    case "message":
+                                        toast(j.data);
+                                        break;
+                                    case "state":
+                                        state_machine.transition(j.data);
+                                        break;
+                                    default:
+                                        console.warn(`Unsupported ${JSON.stringify(j)}`);
+                                        break;
+                                }
+                            };
+                            ws.onclose = e => {
+                                console.log(`Close ${e.data}`);
+                                data.ws = null;
+                            }
+                            data.ws = ws;
+                        }
+                    }
+                ),
+                new State(
+                    "WAIT",
+                    {
+                        enter: () => {
+                            heading_element.textContent = "Waiting for Players...";
+                        }
+                    }
+                )
+            ]
+            state_machine.add_states(state_list);
+            state_machine.transition("START");
+
+            // Event Listeners
+            submit_button.addEventListener("click", () => state_machine.submit());
+        </script>
+    </body>
+</html>
