@@ -1,6 +1,15 @@
 import requests
 import random
 import json
+from openai import OpenAI
+
+client = OpenAI()
+
+
+with open("./system_prompt.txt", encoding="utf8") as f:
+    sys_prompt = f.read()
+
+
 
 def get_rankings(lst):
     sorted_positions = sorted(range(len(lst)), key=lambda k: lst[k], reverse = True)
@@ -10,10 +19,10 @@ def get_rankings(lst):
 themes = ["dogs", "cats", "mice", "snails"]
 theme = random.choice(themes)
 # •	Players respond on phones
-players = ["Fraser", "Jacob", "Richard", "Sally"]
+players = ["Fraser"]#, "Jacob", "Richard", "Sally"]
 jokes = []
 for player in players:
-    jokes.append(input(f"Ok, I want you to tell me a joke about {theme}/n"))
+    jokes.append(input(f"Ok, I want you to tell me a joke about {theme} :  "))
 
 # •	List of responses captured from players
 
@@ -27,8 +36,16 @@ for joke in jokes:
     Theme: {theme}
     Joke: {joke}
     """
-    score_response = requests(OPENAI_REQUEST, score_prompt)
-    score = json.loads(score_response.split("Score:")[1])
+    completion = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": sys_prompt},
+        {"role": "user", "content": score_prompt}
+    ]
+    )
+    score_response = completion.choices[0].message
+    print(score_response)
+    score = json.loads(score_response.content.split("Score:")[1])
     print(score)
     scores.append(score)
 
@@ -49,9 +66,18 @@ for i, joke in enumerate(jokes):
     Position: {rankings[i]}
     Name: {players[i]}
     """
-    kings_response = requests(OPENAI_REQUEST, response_prompt)
-    kings_response_string = json.loads(kings_response.split("Response:")[1])
-    print(kings_response_string)
+    completion = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": sys_prompt},
+        {"role": "user", "content": response_prompt}
+    ]
+    )
+    
+    kings_response = completion.choices[0].message
+    print(kings_response)
+    kings_response_dialouge = json.loads(kings_response.content.split("Response:")[1])
+    print(kings_response_dialouge)
 # •	King recites judgement.
 # •	Worst player is killed.
 # •	If more than one player lives:
