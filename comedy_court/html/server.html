@@ -26,7 +26,8 @@
                 ws: null,
                 players: [],
                 players_submitted_jokes: {},
-                joke_data: null
+                joke_data: null,
+                theme: null,
             }
 
             // Helper Functions
@@ -54,7 +55,8 @@
                                 ws: null,
                                 players: [],
                                 players_submitted_jokes: {},
-                                joke_data: null
+                                joke_data: null,
+                                theme: null,
                             }
 
                             heading_element.textContent = "Connecting...";
@@ -79,6 +81,8 @@
                                     case "set_jokes":
                                         data.joke_data = j.data;
                                         break;
+                                    case "set_theme":
+                                        data.theme = j.data;
                                     case "debug":
                                         console.debug(j.data);
                                         break;
@@ -133,7 +137,9 @@
                             submit_button.style.display = "none";
 
                             // Mock start game animation
-                            setTimeout(() => {state_machine.transition("ASK_FOR_JOKE")}, 3000);
+                            setTimeout(() => {
+                                data.ws.send(JSON.stringify({"type": "finished_start"}));
+                            }, 3000);
                         },
                         exit: () => {
                             submit_button.style.display = "block";
@@ -141,15 +147,15 @@
                     }
                 ),
                 new State(
-                    "ASK_FOR_JOKE",
+                    "ASK_FOR_JOKES",
                     {
                         enter: () => {
-                            data.ws.send(JSON.stringify({"type": "state_set", "data": "ASK_FOR_JOKE"}));
+                            data.ws.send(JSON.stringify({"type": "state_set", "data": "ASK_FOR_JOKES"}));
 
                             submit_button.style.display = "block";
                             submit_button.textContent = "Skip";
                             heading_element.textContent = "Asking for Joke";
-                            toast("Please tell me a joke about XYZ.");
+                            toast(`JESTERS! Tell me a joke about ${data.theme}.`);
                         },
                         submit: () => {
                             data.ws.send(JSON.stringify({"type": "skip"}));

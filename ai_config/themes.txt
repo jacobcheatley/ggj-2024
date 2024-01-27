@@ -1,0 +1,4 @@
+dogs
+cats
+mice
+snails

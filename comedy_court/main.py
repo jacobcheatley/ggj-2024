@@ -5,8 +5,11 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-HTML_DIR = Path("ggj-2024/html")
-STATIC_DIR = Path("ggj-2024/static")
+from comedy_court.lib.king import King
+
+HTML_DIR = Path("comedy_court/html")
+STATIC_DIR = Path("comedy_court/static")
+AI_CONFIG_DIR = Path("ai_config")
 
 MAX_PLAYERS = 2
 
@@ -65,16 +68,19 @@ class Joke:
         self.response_audio = None
         self.relevance = None
         self.funniness = None
-        self.score = None
+        self.points = None
         self.processed = False
 
-    async def process(self, callback: Any):
+    async def process(self, king: King, callback: Any):
+        response = king.grade_joke(self.name, self.joke_text)
+        self.response_text = response["response_text"]
+        self.relevance = response["relevance"]
+        self.funniness = response["funniness"]
+        self.points = response["points"]
+
         self.joke_audio = "placeholder.mp3"  # TODO
-        self.response_text = "THIS IS THE KING'S RESPONSE"  # TODO
         self.response_audio = "placeholder.mp3"  # TODO
-        self.relevance = 0  # TODO
-        self.funniness = 0  # TODO
-        self.score = self.relevance * self.funniness
+
         self.processed = True
         await callback(self)
 
@@ -83,8 +89,10 @@ class Joke:
 
 
 class Game:
-    def __init__(self, connection: ConnectionManager) -> None:
+    def __init__(self, connection: ConnectionManager, king: King) -> None:
         self.connection = connection
+        self.king = king
+
         self.server_state = "INIT"
         self.players: dict[str, Player] = {}
         self.player_jokes: dict[str, Joke] = {}
@@ -130,11 +138,13 @@ class Game:
         match data:
             case {"type": "state_set", "data": state}:
                 self.server_state = state
-                match state:
-                    case "ASK_FOR_JOKE":
-                        await self.goto_ask_for_jokes()
+                # match state:
+                #     case "ASK_FOR_JOKE":
+                #         await self.goto_ask_for_jokes()
             case {"type": "start"}:
                 await self.goto_game_start()
+            case {"type": "finished_start"}:
+                await self.goto_ask_for_jokes()
             case {"type": "skip"}:
                 await self.goto_tell_jokes()
 
@@ -142,6 +152,8 @@ class Game:
         await self.connection.send_server({"type": "state", "data": "START_GAME"})
 
     async def goto_ask_for_jokes(self):
+        await self.connection.send_server({"type": "set_theme", "data": self.king.theme})
+        await self.connection.send_server({"type": "state", "data": "ASK_FOR_JOKES"})
         await self.connection.broadcast({"type": "state", "data": "JOKE"})
 
     async def goto_tell_jokes(self):
@@ -161,11 +173,12 @@ class Game:
             case {"type": "joke", "data": joke_text}:
                 print(f"{name} told joke {joke_text}")
                 await self.connection.send_server({"type": "submitted_joke", "data": {"player": player.name}})
-                await Joke(name, joke_text).process(self.on_processed_joke)
+                await Joke(name, joke_text).process(self.king, self.on_processed_joke)
 
 
+king = King(AI_CONFIG_DIR)
 connection = ConnectionManager()
-game = Game(connection)
+game = Game(connection, king)
 app = FastAPI()
 
 
@@ -194,7 +207,7 @@ async def server_websocket_endpoint(websocket: WebSocket):
             await game.process_server(data)
 
     except WebSocketDisconnect:
-        connection.disconnect_server(websocket)
+        connection.disconnect_server()
         print("Server disconnected")
 
 
