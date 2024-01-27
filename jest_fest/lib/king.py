@@ -13,7 +13,7 @@ class King:
             self.themes = f.readlines()
 
         self.client = OpenAI()
-        self.theme = random.choice(self.themes)
+        self.theme = random.choice(self.themes).strip()
 
     def grade_joke(self, name, joke_text):
         # Score

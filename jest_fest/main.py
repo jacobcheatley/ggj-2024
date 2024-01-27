@@ -1,10 +1,13 @@
+import os
+import urllib.parse
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import requests
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from httpx import RequestError
 
 from jest_fest.lib.king import King
 
@@ -59,6 +62,41 @@ class Player:
         self.color = color
 
 
+@dataclass
+class VoiceSetting:
+    voice_id: str
+    stability: float
+    similarity_boost: float
+
+
+KING_VOICE = VoiceSetting("knrPHWnBmmDHMoiMeP3l", 0.5, 0.5)
+JESTER_VOICE = VoiceSetting("CYw3kZ02Hs0563khs1Fj", 0.3, 0.3)
+
+
+# TODO: async gather this...
+def save_tts_file(text: str, voice: VoiceSetting, filename: str) -> str:
+    # King Voice = knrPHWnBmmDHMoiMeP3l
+    chunk_size = 1024
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice.voice_id}"
+    headers = {
+        "Accept": "audio/mpeg",
+        "Content-Type": "application/json",
+        "xi-api-key": os.environ["ELEVEN_LABS_API_KEY"],
+    }
+    data = {
+        "text": text,
+        "model_id": "eleven_turbo_v2",
+        "voice_settings": {"stability": voice.stability, "similarity_boost": voice.similarity_boost},
+    }
+    response = requests.post(url, json=data, headers=headers)
+    with open(STATIC_DIR / "sound" / f"{filename}.mp3", "wb") as f:
+        for chunk in response.iter_content(chunk_size=chunk_size):
+            if chunk:
+                f.write(chunk)
+
+    return f"/static/sound/{filename}.mp3"
+
+
 class Joke:
     def __init__(self, name: str, joke_text: str) -> None:
         self.name = name
@@ -79,8 +117,13 @@ class Joke:
         self.funniness = response["funniness"]
         self.points = response["points"]
 
-        self.joke_audio = "/static/sound/placeholder.mp3"  # TODO
-        self.response_audio = "/static/sound/placeholder.mp3"  # TODO
+        print("CREATING TTS")
+        self.joke_audio = save_tts_file(
+            self.joke_text, JESTER_VOICE, f"{king.theme}_{urllib.parse.quote(self.name)}_joke"
+        )
+        self.response_audio = save_tts_file(
+            self.response_text, KING_VOICE, f"{king.theme}_{urllib.parse.quote(self.name)}_response"
+        )
 
         self.processed = True
         await callback(self)

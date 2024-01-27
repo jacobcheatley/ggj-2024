@@ -127,11 +127,12 @@
             }
             window.addEventListener("click", music);
             music_element.addEventListener("ended", () => {
-                let music_index = random_int(0, 3);
+                let music_index = random_int(0, 4);
                 music_source_element.src = `/static/music/music_${music_index}.mp3`;
                 music_element.currentTime = 0;
                 music_element.play();
             });
+            music_element.volume = 0.25;
 
             // Constants
             let MAX_PLAYERS = 2;
