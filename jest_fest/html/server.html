@@ -77,8 +77,26 @@
             </div>
             <div id="game-jesters"></div>
         </div>
+        <audio id="music">
+            <source id="music-source" src="/static/music/music_0.mp3" type="audio/mpeg">
+        </audio>
 
         <script>
+            // Set up music
+            let music_element = document.getElementById("music");
+            let music_source_element = document.getElementById("music-source");
+            function music() {
+                music_element.play();
+                document.removeEventListener("click", music);
+            }
+            window.addEventListener("click", music);
+            music_element.addEventListener("ended", () => {
+                let music_index = random_int(0, 2);
+                music_source_element.src = `/static/music/music_${music_index}.mp3`;
+                music_element.currentTime = 0;
+                music_element.play();
+            });
+
             window.onload = () => {
             // Constants
             let MAX_PLAYERS = 2;
@@ -154,7 +172,7 @@
                 }
 
                 draw() {
-                    console.log(`DRAW ${this.image_path} ${this.image_frame} ${this.num_layers}`);
+                    // console.log(`DRAW ${this.image_path} ${this.image_frame} ${this.num_layers}`);
                     for (let i = 0; i < this.element_layers.length; i++) {
                         if (i < this.num_layers) {
                             this.element_layers[i].src = `${this.image_path}/${i}_${this.image_frame}.png`;
@@ -357,6 +375,13 @@
             // Event Listeners
             submit_button.addEventListener("click", () => state_machine.submit());
             };
+
+            // function music() {
+            //     document.getElementById('music-player').play();
+            //     console.log("MUSIC")
+            //     document.removeEventListener('click', music);
+            // }
+            // document.addEventListener('click', music);
         </script>
     </body>
 </html>
