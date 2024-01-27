@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 HTML_DIR = Path("ggj-2024/html")
 STATIC_DIR = Path("ggj-2024/static")
 
-MAX_PLAYERS = 4
+MAX_PLAYERS = 2
 
 
 class ConnectionManager:
@@ -55,12 +55,39 @@ class Player:
         self.color = color
 
 
+class Joke:
+    def __init__(self, name: str, joke_text: str) -> None:
+        self.name = name
+        self.joke_text = joke_text
+
+        self.joke_audio = None
+        self.response_text = None
+        self.response_audio = None
+        self.relevance = None
+        self.funniness = None
+        self.score = None
+        self.processed = False
+
+    async def process(self, callback: Any):
+        self.joke_audio = "placeholder.mp3"  # TODO
+        self.response_text = "THIS IS THE KING'S RESPONSE"  # TODO
+        self.response_audio = "placeholder.mp3"  # TODO
+        self.relevance = 0  # TODO
+        self.funniness = 0  # TODO
+        self.score = self.relevance * self.funniness
+        self.processed = True
+        await callback(self)
+
+    def to_dict(self):
+        return self.__dict__
+
+
 class Game:
     def __init__(self, connection: ConnectionManager) -> None:
         self.connection = connection
         self.server_state = "INIT"
         self.players: dict[str, Player] = {}
-        self.player_jokes: dict[str, str] = {}
+        self.player_jokes: dict[str, Joke] = {}
 
     async def connect_server(self, websocket: WebSocket):
         await self.connection.connect_server(websocket)
@@ -90,6 +117,9 @@ class Game:
         await self.send_server({"type": "player_join", "data": client_name})
         await self.send_server({"type": "players", "data": list(self.players.keys())})
 
+        if len(self.players) >= MAX_PLAYERS:
+            await self.goto_game_start()
+
     async def player_leave(self, client_name: str):
         await self.connection.disconnect_client(client_name)
 
@@ -115,8 +145,15 @@ class Game:
         await self.connection.broadcast({"type": "state", "data": "JOKE"})
 
     async def goto_tell_jokes(self):
-        await self.connection.send_server({"type": "set_jokes", "data": self.player_jokes})
+        await self.connection.send_server(
+            {"type": "set_jokes", "data": {k: v.to_dict() for k, v in self.player_jokes.items()}}
+        )
         await self.connection.send_server({"type": "state", "data": "TELL_JOKES"})
+
+    async def on_processed_joke(self, joke: Joke):
+        self.player_jokes[joke.name] = joke
+        if len(self.player_jokes) == len(self.players):
+            await self.goto_tell_jokes()
 
     async def process_player(self, name: str, data: dict[str, Any]):
         player = self.players[name]
@@ -124,9 +161,7 @@ class Game:
             case {"type": "joke", "data": joke_text}:
                 print(f"{name} told joke {joke_text}")
                 await self.connection.send_server({"type": "submitted_joke", "data": {"player": player.name}})
-                self.player_jokes[name] = joke_text
-                if len(self.player_jokes) == len(self.players):
-                    await self.goto_tell_jokes()
+                await Joke(name, joke_text).process(self.on_processed_joke)
 
 
 connection = ConnectionManager()
