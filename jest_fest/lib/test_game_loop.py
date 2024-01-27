@@ -7,7 +7,7 @@ from openai import OpenAI
 client = OpenAI()
 
 
-with open("./system_prompt.txt", encoding="utf8") as f:
+with open("../../ai_config/system_prompt.txt", encoding="utf-8") as f:
     sys_prompt = f.read()
 
 
@@ -81,14 +81,14 @@ for i, joke in enumerate(jokes):
     print(kings_response_dialouge)
     kings_responses.append(kings_response_dialouge)
 
-for response in kings_responses:
-    speech_file_path = Path(__file__).parent / "speech.mp3"
-    audio_response = client.audio.speech.create(
-    model="tts-1",
-    voice="onyx",
-    input=response
-    )
-    audio_response.stream_to_file(speech_file_path)
+# for response in kings_responses:
+#     speech_file_path = Path(__file__).parent / "speech.mp3"
+#     audio_response = client.audio.speech.create(
+#     model="tts-1",
+#     voice="onyx",
+#     input=response
+#     )
+#     audio_response.with_streaming_response.method(speech_file_path)
 
 # •	King recites judgement.
 # •	Worst player is killed.
@@ -96,3 +96,30 @@ for response in kings_responses:
 #    o	Loop To step 1.
 # •	Else:
 #    o	Declare Winner
+
+assert False
+
+for response in kings_responses:
+    CHUNK_SIZE = 1024
+    url = "https://api.elevenlabs.io/v1/text-to-speech/CYw3kZ02Hs0563khs1Fj"
+
+    headers = {
+    "Accept": "audio/mpeg",
+    "Content-Type": "application/json",
+    "xi-api-key": "710b0ea4bb5612db2997c43cffc7f753"
+    }
+
+    data = {
+    "text": response,
+    "model_id": "eleven_turbo_v2",
+    "voice_settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.5
+    }
+    }
+
+    response = requests.post(url, json=data, headers=headers)
+    with open('output.mp3', 'wb') as f:
+        for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
+            if chunk:
+                f.write(chunk)
