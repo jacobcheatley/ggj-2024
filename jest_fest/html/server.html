@@ -3,16 +3,83 @@
     <head>
         <title>Server - Jest Fest</title>
         <script src="static/script.js"></script>
+        <style>
+            #game-area {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 3840px;
+                height: 2160px;
+                /* background-color: red; */
+            }
+
+            #game-background, #game-text, #game-jesters {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+            }
+
+            #game-background {
+                background-image: url("/static/images/backgrounds/courtroom/0.png");
+                background-size: 100%;
+                width: 100%;
+                height: 100%;
+            }
+
+            #game-text {
+                text-align: center;
+                width: 100%;
+            }
+
+            #heading {
+                color: white;
+                font-size: 100px;
+            }
+
+            #toast {
+                color: white;
+                font-size: 100px;
+            }
+
+            #submit {
+                font-size: 100px;
+            }
+
+            .jester {
+                position: absolute;
+                width: 400px;
+                height: 600px;
+            }
+
+            .jester img {
+                position: absolute;
+                display: block;
+            }
+
+            .jester-name {
+                position: relative;
+                top: 600px;
+                width: 100%;
+                overflow: visible;
+                text-align: center;
+                font-size: 60px;
+            }
+        </style>
     </head>
     <body>
         <h1>Jest Fest Server</h1>
-        <div>
-            <h1 id="heading">Connecting...</h1>
-            <p id="toast">...</p>
-            <button id="submit">Start</button>
+        <div id="game-area">
+            <div id="game-background"></div>
+            <div id="game-text">
+                <h1 id="heading">Connecting...</h1>
+                <p id="toast">...</p>
+                <button id="submit">Start</button>
+            </div>
+            <div id="game-jesters"></div>
         </div>
 
         <script>
+            window.onload = () => {
             // Constants
             let MAX_PLAYERS = 2;
 
@@ -20,6 +87,115 @@
             let heading_element = document.getElementById("heading");
             let toast_element = document.getElementById("toast")
             let submit_button = document.getElementById("submit");
+            let game_jesters_element = document.getElementById("game-jesters");
+
+            // Animations
+            let background_path = "/images/backgrounds/0.png";
+
+            // Animatables - Jesters
+            let jester_start_x = 1820;
+            let jester_start_y = 1350;
+            let jester_spacing = 300;
+
+            class Jester {
+                constructor(name, index) {
+                    this.name = name;
+                    this.index = index;
+                    this.home_position_x = jester_start_x + this.index * jester_spacing;
+                    this.home_position_y = jester_start_y;
+
+                    // Create elements
+                    this.element = document.createElement("div");
+                    this.element.classList.add("jester");
+                    this.element_layers = [document.createElement("img"), document.createElement("img"), document.createElement("img")];
+                    this.name_element = document.createElement("div");
+                    this.name_element.classList.add("jester-name");
+                    this.name_element.textContent = this.name;
+                    this.element_layers.forEach(e => {
+                        this.element.appendChild(e);
+                    });
+                    this.element.appendChild(this.name_element);
+                    game_jesters_element.appendChild(this.element);
+
+                    // Animatable Properties
+                    this._image_path = "/images/jesters/jesto/still";
+                    this._image_frame = 0;
+                    this._num_layers = 1;
+                    
+                    this.set_position(this.home_position_x, this.home_position_y);
+                    this.draw();
+                }
+
+                get image_path() {
+                    return this._image_path;
+                }
+                set image_path(value) {
+                    this._image_path = value;
+                    this.draw();
+                }
+                get image_frame() {
+                    return this._image_frame;
+                }
+                set image_frame(value) {
+                    this._image_frame = value;
+                    this.draw();
+                }
+                get num_layers() {
+                    return this._num_layers;
+                }
+                set num_layers(value) {
+                    this._num_layers = value;
+                    this.draw();
+                }
+
+                set_position(x, y) {
+                    this.element.style.left = `${x}px`;
+                    this.element.style.top = `${y}px`;
+                }
+
+                draw() {
+                    console.log(`DRAW ${this.image_path} ${this.image_frame} ${this.num_layers}`);
+                    for (let i = 0; i < this.element_layers.length; i++) {
+                        if (i < this.num_layers) {
+                            this.element_layers[i].src = `${this.image_path}/${i}_${this.image_frame}.png`;
+                        } else {
+                            this.element_layers[i].src = "";
+                        }
+                    }
+                }
+
+                start_loop(image_path, num_frames, num_layers, ms) {
+                    clearInterval(this.loop_interval);
+                    let current_frame = 0;
+                    this.loop_interval = setInterval(() => {
+                        this.image_path = image_path;
+                        this.image_frame = current_frame;
+                        this.num_layers = num_layers;
+                        current_frame += 1;
+                        current_frame %= num_frames;
+                    }, ms);
+                }
+            }
+
+            let jester = new Jester("Jacob", 0);
+            let jester2 = new Jester("Richard", 1);
+            jester.start_loop("/images/jesters/jesto/writing", 3, 3, 200);
+
+            // Test animation
+            // jester.image_path = "/images/jesters/jesto/writing";
+            // jester.num_layers = 3;
+            // anime({
+            //     targets: jester,
+            //     keyframes: [
+            //         {image_frame: 0},
+            //         {image_frame: 1},
+            //         {image_frame: 2},
+            //     ],
+            //     duration: 600,
+            //     loop: true,
+            //     round: true
+            //     // easing: "none"
+            // })
 
             // Local Variables
             let data = {
@@ -48,9 +224,6 @@
                     "INIT",
                     {
                         enter: () => { 
-                            submit_button.style.display = "block";
-                            submit_button.textContent = "Start";
-                            
                             data = {
                                 ws: null,
                                 players: [],
@@ -60,7 +233,8 @@
                             }
 
                             heading_element.textContent = "Connecting...";
-                            submit_button.style.display = "block";
+                            submit_button.style.display = "inline-block";
+                            submit_button.textContent = "Start";
 
                             let ws = new WebSocket(`ws://${window.location.host}/ws_server`);
                             ws.onmessage = e => {
@@ -142,7 +316,7 @@
                             }, 3000);
                         },
                         exit: () => {
-                            submit_button.style.display = "block";
+                            submit_button.style.display = "inline-block";
                         }
                     }
                 ),
@@ -152,7 +326,7 @@
                         enter: () => {
                             data.ws.send(JSON.stringify({"type": "state_set", "data": "ASK_FOR_JOKES"}));
 
-                            submit_button.style.display = "block";
+                            submit_button.style.display = "inline-block";
                             submit_button.textContent = "Skip";
                             heading_element.textContent = "Asking for Joke";
                             toast(`JESTERS! Tell me a joke about ${data.theme}.`);
@@ -182,6 +356,7 @@
 
             // Event Listeners
             submit_button.addEventListener("click", () => state_machine.submit());
+            };
         </script>
     </body>
 </html>
