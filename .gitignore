@@ -2,3 +2,6 @@ poetry.lock
 __pycache__
 *.mp3
 .env
+*.kra
+*.kra~
+*.png~
