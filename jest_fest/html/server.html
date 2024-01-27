@@ -22,6 +22,7 @@
                 position: absolute;
                 width: 100%;
                 height: 100%;
+                pointer-events: none;
             }
 
             #game-background {
@@ -34,6 +35,7 @@
             #game-text {
                 text-align: center;
                 width: 100%;
+                pointer-events: all;
             }
 
             #heading {
@@ -339,7 +341,24 @@
 
             // State Machine Setup
             let state_machine = new StateMachine();
+            let click_to_start = () => {
+                state_machine.transition("INIT");
+            }
             let state_list = [
+                new State(
+                    "PREINIT",
+                    {
+                        enter: async () => {
+                            heading_element.textContent = "Click to Setup...";
+                            toast("");
+                            submit_button.style.display = "none";
+                            window.addEventListener("click", click_to_start);
+                        },
+                        exit: async () => {
+                            window.removeEventListener("click", click_to_start);
+                        }
+                    },
+                ),
                 new State(
                     "INIT",
                     {
@@ -532,7 +551,7 @@
                 )
             ]
             state_machine.add_states(state_list);
-            await state_machine.transition("INIT");
+            await state_machine.transition("PREINIT");
 
             // Event Listeners
             submit_button.addEventListener("click", () => state_machine.submit());

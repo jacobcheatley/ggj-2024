@@ -15,7 +15,7 @@ HTML_DIR = Path("jest_fest/html")
 STATIC_DIR = Path("jest_fest/static")
 AI_CONFIG_DIR = Path("ai_config")
 
-MAX_PLAYERS = 2
+MAX_PLAYERS = 6
 
 
 class ConnectionManager:
@@ -152,8 +152,8 @@ class Game:
         await self.connection.send_server(data)
 
     async def player_join(self, client_name: str, websocket: WebSocket):
-        # if self.server_state != "WAITING_FOR_PLAYERS":
-        #     raise ValueError("Game already in progress!")
+        if self.server_state != "WAIT_FOR_PLAYERS":
+            raise ValueError("Game not waiting for players!")
         if len(self.players) >= MAX_PLAYERS:
             raise ValueError("Game full!")
         if client_name in self.players and self.connection.is_player_connected(client_name):
