@@ -18,7 +18,7 @@
                 /* background-color: red; */
             }
 
-            #game-background, #game-text, #game-jesters {
+            #game-background, #game-text, #game-jesters, #game-king {
                 position: absolute;
                 width: 100%;
                 height: 100%;
@@ -57,9 +57,14 @@
                 height: 600px;
             }
 
-            .jester img {
+            .jester img, .king img {
                 position: absolute;
                 display: block;
+            }
+
+            .king img {
+                width: 100%;
+                height: 100%;
             }
 
             .jester-name {
@@ -136,6 +141,7 @@
             let toast_element = document.getElementById("toast")
             let submit_button = document.getElementById("submit");
             let game_jesters_element = document.getElementById("game-jesters");
+            let game_king_element = document.getElementById("game-king");
 
             // Animations
             let background_path = "/images/backgrounds/0.png";
@@ -223,6 +229,10 @@
                     this.image_frame = image_frame == undefined ? 0 : image_frame;
                     this.num_layers = num_layers == undefined ? 1 : num_layers;
                 }
+
+                hide() {
+                    this.set_image("/images/blank");
+                }
             }
 
             class Jester extends Animatable {
@@ -241,6 +251,13 @@
                     
                     this.set_position(this.home_position_x, this.home_position_y);
                     this.set_image("/images/jesters/jesto/still");
+                }
+            }
+
+            class King extends Animatable {
+                constructor() {
+                    super("king", game_king_element);
+                    this.set_image("/images/blank");
                 }
             }
 
@@ -275,8 +292,10 @@
                 players_submitted_jokes: {},
                 joke_data: null,
                 theme: null,
+                winner: null,
             }
             let jesters = {};
+            let king = new King();
 
             // Helper Functions
             let toast = (message, color) => {
@@ -304,6 +323,7 @@
                                 players_submitted_jokes: {},
                                 joke_data: null,
                                 theme: null,
+                                winner: null,
                             }
 
                             heading_element.textContent = "Connecting...";
@@ -333,6 +353,10 @@
                                         break;
                                     case "set_theme":
                                         data.theme = j.data;
+                                        break
+                                    case "set_winner":
+                                        data.winner = j.data;
+                                        break
                                     case "debug":
                                         console.debug(j.data);
                                         break;
@@ -401,10 +425,10 @@
 
                             submit_button.style.display = "none"; // Disabled skip button for now
                             submit_button.textContent = "Skip";
-                            heading_element.textContent = "Asking for Joke";
-                            console.log("STARTED SAY");
+                            heading_element.textContent = `Asking for Joke about ${data.theme}`;
+                            king.start_loop("/images/king/talking/neutral", 2, 1, 200);
                             await speech.say("KING", `JESTERS! Tell me a joke about ${data.theme}.`, undefined);
-                            console.log("FINISHED SAY");
+                            king.hide();
                             data.players.forEach(player_name => {
                                 jesters[player_name].start_loop("/images/jesters/jesto/writing", 3, 3, 200);
                             });
@@ -423,10 +447,55 @@
                             for (const player_name of data.players) {
                                 let player_joke = data.joke_data[player_name];
                                 console.log(`Player ${player_name}\nJoke ${JSON.stringify(player_joke)}`);
+                                // TODO: Opening animation
                                 jesters[player_name].start_loop("/images/jesters/jesto/reading", 3, 3, 200);
                                 await speech.say(player_name, player_joke.joke_text, player_joke.joke_audio);
+
+                                let king_response = "";
+                                let king_response_frames = 1;
+                                if (player_joke.points < 2) {
+                                    king_response = "angry_response/yell_and_point";
+                                    king_response_frames = 4;
+                                } else if (player_joke.points < 10) {
+                                    king_response = "angry_response/yell";
+                                    king_response_frames = 4;
+                                } else if (player_joke.points < 20) {
+                                    king_response = "unimpressed_response";
+                                    king_response_frames = 6;
+                                } else if (player_joke.points < 30) {
+                                    king_response = "neutral_response";
+                                    king_response_frames = 4;
+                                } else if (player_joke.points < 55) {
+                                    king_response = "impressed_response";
+                                    king_response_frames = 2;
+                                } else {
+                                    king_response = "positive_response";
+                                    king_response_frames = 6;
+                                }
+                                
+                                king.start_loop(`/images/king/${king_response}`, king_response_frames, 1, 200);
                                 await speech.say("KING", player_joke.response_text, player_joke.response_audio);
+                                king.hide();
                                 jesters[player_name].set_image("/images/jesters/jesto/still");
+                            }
+
+                            data.ws.send(JSON.stringify({"type": "finished_tell_jokes"}));
+                        }
+                    }
+                ),
+                new State(
+                    "EXECUTION",
+                    {
+                        enter: async () => {
+                            data.ws.send(JSON.stringify({"type": "state_set", "data": "EXECUTION"}));
+
+                            for (const player_name of data.players) {
+                                if (data.winner == player_name) {
+                                    jesters[player_name].set_image("/images/jesters/jesto/still");
+                                } else {
+                                    jesters[player_name].start_loop("/images/jesters/jesto/guillotine/panic", 2, 6, 200);
+                                    // TODO: Then execute them
+                                }
                             }
                         }
                     }

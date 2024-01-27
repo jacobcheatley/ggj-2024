@@ -148,6 +148,8 @@ class Game:
                 await self.goto_ask_for_jokes()
             case {"type": "skip"}:
                 await self.goto_tell_jokes()
+            case {"type": "finished_tell_jokes"}:
+                await self.goto_execution()
 
     async def goto_game_start(self):
         await self.connection.send_server({"type": "state", "data": "START_GAME"})
@@ -162,6 +164,14 @@ class Game:
             {"type": "set_jokes", "data": {k: v.to_dict() for k, v in self.player_jokes.items()}}
         )
         await self.connection.send_server({"type": "state", "data": "TELL_JOKES"})
+
+    async def goto_execution(self):
+        winner = None
+        for joke in self.player_jokes.values():
+            if winner is None or joke.points > winner.points:
+                winner = joke
+        await self.connection.send_server({"type": "set_winner", "data": winner.name})
+        await self.connection.send_server({"type": "state", "data": "EXECUTION"})
 
     async def on_processed_joke(self, joke: Joke):
         self.player_jokes[joke.name] = joke

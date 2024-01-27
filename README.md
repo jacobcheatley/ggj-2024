@@ -2,7 +2,7 @@
 
 ## Setup
 
-Set 
+Setup `.env` based on `.env.template`
 
 ```
 poetry install --no-root
