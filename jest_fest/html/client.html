@@ -14,7 +14,7 @@
         </div>
 
         <script>
-            window.onload = () => {
+            window.onload = async () => {
             // Elements
             let heading_element = document.getElementById("heading");
             let toast_element = document.getElementById("toast")
@@ -44,7 +44,7 @@
                 new State(
                     "NAME",
                     {
-                        submit: () => { 
+                        submit: async () => { 
                             console.log("NAME SUBMIT");
 
                             let name = input_element.value;
@@ -56,7 +56,7 @@
                             name = encodeURIComponent(name.toUpperCase());
 
                             let ws = new WebSocket(`ws://${window.location.host}/ws/${name}`);
-                            ws.onmessage = e => {
+                            ws.onmessage = async e => {
                                 let j = JSON.parse(e.data);
                                 console.log(`Message: ${JSON.stringify(j)}`);
                                 switch (j.type) {
@@ -74,7 +74,7 @@
                                         toast(j.data);
                                         break;
                                     case "state":
-                                        state_machine.transition(j.data);
+                                        await state_machine.transition(j.data);
                                         break;
                                     default:
                                         console.warn(`Unsupported ${JSON.stringify(j)}`);
@@ -87,7 +87,7 @@
                             }
                             data.ws = ws;
                         },
-                        enter: () => {
+                        enter: async () => {
                             heading_element.textContent = "Enter Name";
                             input_element.value = "";
                         }
@@ -96,14 +96,14 @@
                 new State(
                     "WAIT",
                     {
-                        enter: () => {
+                        enter: async () => {
                             heading_element.textContent = "Waiting..."
                             input_element.style.display = "none";
                             submit_button.style.display = "none";
                             toast("Waiting...");
 
                         },
-                        exit: () => {
+                        exit: async () => {
                             input_element.style.display = "block";
                             submit_button.style.display = "block";
                             toast("");
@@ -113,7 +113,7 @@
                 new State(
                     "JOKE",
                     {
-                        submit: () => {
+                        submit: async () => {
                             console.log("JOKE SUBMIT");
 
                             let joke = input_element.value;
@@ -124,9 +124,9 @@
                             }
                             data.ws.send(JSON.stringify({"type": "joke", "data": joke}));
 
-                            state_machine.transition("WAIT");
+                            await state_machine.transition("WAIT");
                         },
-                        enter: () => {
+                        enter: async () => {
                             heading_element.textContent = "Enter Joke";
                             input_element.value = "";
                         }
@@ -134,7 +134,7 @@
                 ),
             ]
             state_machine.add_states(state_list);
-            state_machine.transition("NAME");
+            await state_machine.transition("NAME");
 
             // Event Listeners
             submit_button.addEventListener("click", () => state_machine.submit());
