@@ -231,6 +231,7 @@ class Game:
 
 
 king = King(AI_CONFIG_DIR)
+save_tts_file(f"JESTERS! Tell me a joke about {king.theme}", KING_VOICE, f"theme_{king.theme}")
 connection = ConnectionManager()
 game = Game(connection, king)
 app = FastAPI()

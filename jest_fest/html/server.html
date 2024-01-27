@@ -428,7 +428,7 @@
                             submit_button.textContent = "Skip";
                             heading_element.textContent = `Asking for Joke about ${data.theme}`;
                             king.start_loop("/images/king/talking/neutral", 2, 1, 200);
-                            await speech.say("KING", `JESTERS! Tell me a joke about ${data.theme}.`, undefined);
+                            await speech.say("KING", `JESTERS! Tell me a joke about ${data.theme}.`, `/static/sound/theme_${data.theme}.mp3`);
                             king.hide();
                             data.players.forEach(player_name => {
                                 jesters[player_name].start_loop("/images/jesters/jesto/writing", 3, 3, 200);
