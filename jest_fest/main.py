@@ -1,9 +1,10 @@
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from httpx import RequestError
 
 from jest_fest.lib.king import King
 
@@ -195,6 +196,22 @@ async def get_server():
 
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/images/{path:path}")
+async def images(path: str, request: Request):
+    # print("GET IMAGE", request.url)
+    redirect_path = path
+    image_path = STATIC_DIR / "images" / path
+    if not image_path.exists():
+        image_stem = image_path.stem
+        image_ext = image_path.suffix
+        image_layer = image_stem.split("_")[0]
+        image_path = image_path.with_name(f"{image_layer}{image_ext}")
+        redirect_path = str(image_path.relative_to(STATIC_DIR / "images")).replace("\\", "/")
+    # print("REDIRECTED TO", f"/static/images/{redirect_path}")
+
+    return RedirectResponse(f"/static/images/{redirect_path}")
 
 
 @app.websocket("/ws_server")
