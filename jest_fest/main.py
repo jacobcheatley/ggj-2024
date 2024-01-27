@@ -79,8 +79,8 @@ class Joke:
         self.funniness = response["funniness"]
         self.points = response["points"]
 
-        self.joke_audio = "placeholder.mp3"  # TODO
-        self.response_audio = "placeholder.mp3"  # TODO
+        self.joke_audio = "/static/sound/placeholder.mp3"  # TODO
+        self.response_audio = "/static/sound/placeholder.mp3"  # TODO
 
         self.processed = True
         await callback(self)

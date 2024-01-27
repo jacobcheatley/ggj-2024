@@ -3,7 +3,12 @@
     <head>
         <title>Server - Jest Fest</title>
         <script src="static/script.js"></script>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Playfair Display">
         <style>
+            body {
+                font-family: 'Playfair Display';
+            }
+
             #game-area {
                 position: absolute;
                 top: 0;
@@ -43,6 +48,7 @@
 
             #submit {
                 font-size: 100px;
+                font-family: 'Playfair Display';
             }
 
             .jester {
@@ -59,23 +65,32 @@
             .jester-name {
                 position: relative;
                 top: 600px;
-                width: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                width: fit-content;
                 overflow: visible;
                 text-align: center;
                 font-size: 60px;
-            }
-
-            #game-speech {
-                font-size: 200px;
-                position: absolute;
-                width: 100%;
-                text-align: center;
-                background-color: rgba(255, 255, 255, 0.1);
+                background-color: rgba(255, 255, 255, 0.5);
                 border-radius: 20px;
                 padding: 10px;
                 margin: 10px;
                 display: block;
                 border: solid black 8px;
+            }
+
+            #game-speech {
+                font-size: 100px;
+                position: absolute;
+                width: 100%;
+                text-align: center;
+                background-color: rgba(255, 255, 255, 0.5);
+                border-radius: 20px;
+                padding: 10px;
+                margin: 10px;
+                display: block;
+                border: solid black 8px;
+                font-weight: bold;
             }
         </style>
     </head>
@@ -197,6 +212,17 @@
                         current_frame %= num_frames;
                     }, ms);
                 }
+
+                stop_loop() {
+                    clearInterval(this.loop_interval);
+                }
+
+                set_image(image_path, image_frame, num_layers) {
+                    this.stop_loop();
+                    this.image_path = image_path;
+                    this.image_frame = image_frame == undefined ? 0 : image_frame;
+                    this.num_layers = num_layers == undefined ? 1 : num_layers;
+                }
             }
 
             class Jester extends Animatable {
@@ -214,7 +240,7 @@
                     this.element.appendChild(this.name_element);
                     
                     this.set_position(this.home_position_x, this.home_position_y);
-                    this.image_path = "/images/jesters/jesto/still";
+                    this.set_image("/images/jesters/jesto/still");
                 }
             }
 
@@ -224,13 +250,13 @@
                     this.element.style.display = "none";
                 }
 
-                async say(text, src) {
+                async say(name, text, src) {
                     return new Promise((resolve, reject) => {
                         if (src == undefined) {
                             src = "/static/sound/placeholder.mp3";
                         }
 
-                        this.element.textContent = text;
+                        this.element.textContent = `${name}: ${text}`;
                         this.element.style.display = "block";
                         let audio = new Audio(src);
                         audio.play();
@@ -241,8 +267,6 @@
                     })
                 }
             }
-
-            // jester.start_loop("/images/jesters/jesto/writing", 3, 3, 200);
 
             // Local Variables
             let data = {
@@ -379,7 +403,7 @@
                             submit_button.textContent = "Skip";
                             heading_element.textContent = "Asking for Joke";
                             console.log("STARTED SAY");
-                            await speech.say(`JESTERS! Tell me a joke about ${data.theme}.`, undefined);
+                            await speech.say("KING", `JESTERS! Tell me a joke about ${data.theme}.`, undefined);
                             console.log("FINISHED SAY");
                             data.players.forEach(player_name => {
                                 jesters[player_name].start_loop("/images/jesters/jesto/writing", 3, 3, 200);
@@ -396,12 +420,14 @@
                         enter: async () => {
                             data.ws.send(JSON.stringify({"type": "state_set", "data": "TELL_JOKES"}));
 
-                            data.players.forEach(player_name => {
+                            for (const player_name of data.players) {
                                 let player_joke = data.joke_data[player_name];
                                 console.log(`Player ${player_name}\nJoke ${JSON.stringify(player_joke)}`);
                                 jesters[player_name].start_loop("/images/jesters/jesto/reading", 3, 3, 200);
-                                // TODO waiting etc
-                            });
+                                await speech.say(player_name, player_joke.joke_text, player_joke.joke_audio);
+                                await speech.say("KING", player_joke.response_text, player_joke.response_audio);
+                                jesters[player_name].set_image("/images/jesters/jesto/still");
+                            }
                         }
                     }
                 )
