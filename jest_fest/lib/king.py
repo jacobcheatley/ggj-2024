@@ -26,7 +26,10 @@ class King:
             messages=[{"role": "system", "content": self.system_prompt}, {"role": "user", "content": score_prompt}],
         )
         score_response = completion.choices[0].message
-        score_dict = json.loads(score_response.content.split("Score:")[1])
+        try:
+            score_dict = json.loads(score_response.content.split("Score:")[1])
+        except Exception:
+            score_dict = {"relevance": 5, "funniness": 5}
         relevance = score_dict["relevance"]
         funniness = score_dict["funniness"]
         points = relevance * funniness
@@ -45,6 +48,9 @@ class King:
         )
 
         kings_response = completion.choices[0].message
-        response_text = json.loads(kings_response.content.split("Response:")[1])
+        try:
+            response_text = json.loads(kings_response.content.split("Response:")[1])
+        except Exception:
+            response_text = f"I'm sorry, it appears I had a lapse of mind while thinking about your joke, and I'm not sure what feedback to give. Nevertheless, I bestow upon thee {points} points for your efforts."
 
         return {"relevance": relevance, "funniness": funniness, "points": points, "response_text": response_text}

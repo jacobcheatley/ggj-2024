@@ -87,7 +87,8 @@
             #game-speech {
                 font-size: 100px;
                 position: absolute;
-                width: 100%;
+                left: 0;
+                right: 0;
                 text-align: center;
                 background-color: rgba(255, 255, 255, 0.5);
                 border-radius: 20px;
@@ -96,6 +97,7 @@
                 display: block;
                 border: solid black 8px;
                 font-weight: bold;
+                /* box-sizing: border-box; */
             }
         </style>
     </head>
@@ -135,7 +137,7 @@
             music_element.volume = 0.25;
 
             // Constants
-            let MAX_PLAYERS = 2;
+            let MAX_PLAYERS = 4;
 
             // Elements
             let heading_element = document.getElementById("heading");
