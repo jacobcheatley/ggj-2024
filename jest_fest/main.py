@@ -15,7 +15,7 @@ HTML_DIR = Path("jest_fest/html")
 STATIC_DIR = Path("jest_fest/static")
 AI_CONFIG_DIR = Path("ai_config")
 
-MAX_PLAYERS = 3
+MAX_PLAYERS = 2
 
 
 class ConnectionManager:

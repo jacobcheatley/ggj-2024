@@ -114,30 +114,27 @@
             <div id="game-king"></div>
             <div id="game-speech"></div>
         </div>
-        <audio id="music">
-            <source id="music-source" src="/static/music/music_0.mp3" type="audio/mpeg">
-        </audio>
 
         <script>
             window.onload = async () => {
-            // Set up music
-            let music_element = document.getElementById("music");
-            let music_source_element = document.getElementById("music-source");
-            function music() {
-                music_element.play();
-                document.removeEventListener("click", music);
-            }
-            window.addEventListener("click", music);
-            music_element.addEventListener("ended", () => {
+            function start_music() {
                 let music_index = random_int(0, 4);
-                music_source_element.src = `/static/music/music_${music_index}.mp3`;
-                music_element.currentTime = 0;
-                music_element.play();
-            });
-            music_element.volume = 0.25;
+                let music_source = `/static/music/music_${music_index}.mp3`;
+                let audio = new Audio(music_source);
+                audio.load();
+                audio.play();
+                audio.volume = 0.25;
+                audio.onended = start_music;
+            }
+            function clear_music_setup() {
+                window.removeEventListener("click", start_music);
+                window.removeEventListener("click", clear_music_setup);
+            }
+            window.addEventListener("click", start_music);
+            window.addEventListener("click", clear_music_setup);
 
             // Constants
-            let MAX_PLAYERS = 4;
+            let MAX_PLAYERS = 3;
 
             // Elements
             let heading_element = document.getElementById("heading");
@@ -154,12 +151,21 @@
             let jester_start_y = 1350;
             let jester_spacing = 300;
 
+            
+            let delay = (ms) => { 
+                return new Promise(resolve => { 
+                    setTimeout(() => { resolve('') }, ms); 
+                }) 
+            };
+
             class Animatable {
                 constructor(class_name, parent_element) {
                     // Create elements
                     this.element = document.createElement("div");
                     this.element.classList.add(class_name);
-                    this.element_layers = [document.createElement("img"), document.createElement("img"), document.createElement("img")];
+                    this.element_layers = [];
+                    for (let i = 0; i < 7; i++)
+                        this.element_layers.push(document.createElement("img"));
                     this.element_layers.forEach(e => {
                         this.element.appendChild(e);
                     });
@@ -211,7 +217,7 @@
 
                 start_loop(image_path, num_frames, num_layers, ms) {
                     console.log(`Starting loop ${image_path}`);
-                    clearInterval(this.loop_interval);
+                    this.stop_loop();
                     let current_frame = 0;
                     this.loop_interval = setInterval(() => {
                         this.image_path = image_path;
@@ -220,6 +226,24 @@
                         current_frame += 1;
                         current_frame %= num_frames;
                     }, ms);
+                }
+
+                start_one_shot(image_path, num_frames, num_layers, ms) {
+                    return new Promise((resolve, reject) => {
+                        console.log(`Starting one shot ${image_path}`);
+                        this.stop_loop();
+                        let current_frame = 0;
+                        this.loop_interval = setInterval(() => {
+                            this.image_path = image_path;
+                            this.image_frame = current_frame;
+                            this.num_layers = num_layers;
+                            current_frame += 1;
+                            if (current_frame >= num_frames) {
+                                this.stop_loop();
+                                resolve('');
+                            }
+                        }, ms);
+                    })
                 }
 
                 stop_loop() {
@@ -451,6 +475,8 @@
                                 let player_joke = data.joke_data[player_name];
                                 console.log(`Player ${player_name}\nJoke ${JSON.stringify(player_joke)}`);
                                 // TODO: Opening animation
+                                await jesters[player_name].start_one_shot("/images/jesters/jesto/open_scroll", 3, 3, 200);
+                                console.log("Done opening scroll...")
                                 jesters[player_name].start_loop("/images/jesters/jesto/reading", 3, 3, 200);
                                 await speech.say(player_name, player_joke.joke_text, player_joke.joke_audio);
 
@@ -494,10 +520,11 @@
 
                             for (const player_name of data.players) {
                                 if (data.winner == player_name) {
-                                    jesters[player_name].set_image("/images/jesters/jesto/still");
+                                    // jesters[player_name].set_image("/images/jesters/jesto/still");
+                                    delay(2000).then(() => jesters[player_name].start_loop("images/jesters/jesto/dance", 4, 3, 200));
                                 } else {
                                     jesters[player_name].start_loop("/images/jesters/jesto/guillotine/panic", 2, 6, 200);
-                                    // TODO: Then execute them
+                                    delay(random_int(2000, 5000)).then(() => jesters[player_name].start_one_shot("/images/jesters/jesto/guillotine/drop", 5, 6, 100));
                                 }
                             }
                         }
