@@ -251,9 +251,12 @@ async def get_server():
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+# @app.get("/palettes/{path:path}")
+# async def
+
 
 @app.get("/images/{path:path}")
-async def images(path: str, request: Request):
+async def images(path: str):
     # print("GET IMAGE", request.url)
     redirect_path = path
     image_path = STATIC_DIR / "images" / path
