@@ -5,10 +5,10 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from comedy_court.lib.king import King
+from jest_fest.lib.king import King
 
-HTML_DIR = Path("comedy_court/html")
-STATIC_DIR = Path("comedy_court/static")
+HTML_DIR = Path("jest_fest/html")
+STATIC_DIR = Path("jest_fest/static")
 AI_CONFIG_DIR = Path("ai_config")
 
 MAX_PLAYERS = 2
