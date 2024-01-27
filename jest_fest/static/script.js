@@ -20,17 +20,23 @@ class StateMachine {
         console.log(this.states);
     }
 
-    transition(statename) {
+    async transition(statename) {
         if (this.current_state != null) {
             console.log(`${this.current_state.name}.exit()`);
-            this.current_state.exit?.();
+            await this.current_state.exit?.();
         }
         this.current_state = this.states[statename];
         console.log(`${this.current_state.name}.enter()`);
-        this.current_state.enter?.();
+        await this.current_state.enter?.();
     }
 
-    submit() {
-        this.current_state?.submit?.();
+    async submit() {
+        await this.current_state?.submit?.();
     }
+}
+
+let random_int = (min, max) => {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
 }
