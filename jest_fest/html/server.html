@@ -91,7 +91,7 @@
             }
             window.addEventListener("click", music);
             music_element.addEventListener("ended", () => {
-                let music_index = random_int(0, 2);
+                let music_index = random_int(0, 3);
                 music_source_element.src = `/static/music/music_${music_index}.mp3`;
                 music_element.currentTime = 0;
                 music_element.play();
@@ -167,6 +167,7 @@
                 }
 
                 set_position(x, y) {
+                    console.log(`set_position ${x} ${y}`);
                     this.element.style.left = `${x}px`;
                     this.element.style.top = `${y}px`;
                 }
@@ -195,25 +196,7 @@
                 }
             }
 
-            let jester = new Jester("Jacob", 0);
-            let jester2 = new Jester("Richard", 1);
-            jester.start_loop("/images/jesters/jesto/writing", 3, 3, 200);
-
-            // Test animation
-            // jester.image_path = "/images/jesters/jesto/writing";
-            // jester.num_layers = 3;
-            // anime({
-            //     targets: jester,
-            //     keyframes: [
-            //         {image_frame: 0},
-            //         {image_frame: 1},
-            //         {image_frame: 2},
-            //     ],
-            //     duration: 600,
-            //     loop: true,
-            //     round: true
-            //     // easing: "none"
-            // })
+            // jester.start_loop("/images/jesters/jesto/writing", 3, 3, 200);
 
             // Local Variables
             let data = {
@@ -223,6 +206,7 @@
                 joke_data: null,
                 theme: null,
             }
+            let jesters = {};
 
             // Helper Functions
             let toast = (message, color) => {
@@ -260,6 +244,7 @@
                                 console.log(`Message: ${JSON.stringify(j)}`);
                                 switch (j.type) {
                                     case "player_join":
+                                        jesters[j.data] = new Jester(j.data, Object.keys(jesters).length);
                                         break
                                     case "players":
                                         data.players = j.data;
