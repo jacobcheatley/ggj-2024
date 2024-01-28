@@ -178,12 +178,37 @@
             let jester_start_y = 1350;
             let jester_spacing = 300;
 
-            
             let delay = (ms) => { 
                 return new Promise(resolve => { 
                     setTimeout(() => { resolve('') }, ms); 
                 }) 
             };
+
+            let play_sound_one_shot = (sound_src) => {
+                console.log(`Playing ${sound_src}`)
+                let audio = new Audio(sound_src);
+                audio.load();
+                audio.play();
+            }
+
+            let should_play_loops = {};
+            let start_sound_loop = (name, variations, ms, volume, start) => {
+                console.log(`START SOUND LOOP ${name} ${variations} ${start}`);
+                if (start == true)
+                    should_play_loops[name] = true;
+                if (!should_play_loops[name])
+                    return;
+                let audio = new Audio(`/static/sound/effects/${name}_${random_int(0, variations)}.mp3`);
+                audio.load();
+                audio.volume = volume;
+                audio.play();
+                audio.onended = async () => {
+                    if (ms != undefined && ms > 0)
+                        await delay(ms);
+                    start_sound_loop(name, variations, ms, volume, false);
+                };
+            };
+            let stop_sound_loop = (name) => { should_play_loops[name] = false };
 
             class Animatable {
                 constructor(class_name, parent_element, palette) {
@@ -570,15 +595,18 @@
 
                             for (const player_name of data.players) {
                                 if (data.winner == player_name) {
-                                    delay(2000).then(() => jesters[player_name].start_loop("jesters/jesto/dance", 4, 200));
+                                    delay(2000).then(() => jesters[player_name].start_loop("jesters/jesto/dance", 4, 200)).then(() => start_sound_loop("joy", 17, 1500, 0.25, true));
                                 } else {
                                     jesters[player_name].start_loop("jesters/jesto/guillotine/panic", 2, 200);
-                                    delay(random_int(2000, 5000)).then(() => jesters[player_name].start_one_shot("jesters/jesto/guillotine/drop", 5, 100));
+                                    delay(random_int(2000, 5000)).then(() => play_sound_one_shot(`/static/sound/effects/chop_${random_int(0, 4)}.mp3`)).then(() => jesters[player_name].start_one_shot("jesters/jesto/guillotine/drop", 5, 100));
                                 }
                             }
 
                             submit_button.style.display = "block";
                             submit_button.textContent = "Restart";
+                        },
+                        exit: async () => {
+                            stop_sound_loop("joy");
                         },
                         submit: async () => {
                             data.ws.send(JSON.stringify({"type": "restart"}));
