@@ -151,7 +151,7 @@ class Game:
     async def send_server(self, data: Any):
         await self.connection.send_server(data)
 
-    async def player_join(self, client_name: str, websocket: WebSocket):
+    async def player_join(self, client_name: str, websocket: WebSocket, palette_id: str):
         if self.server_state != "WAIT_FOR_PLAYERS":
             raise ValueError("Game not waiting for players!")
         if len(self.players) >= MAX_PLAYERS:
@@ -166,7 +166,7 @@ class Game:
         await self.connection.send_client(client_name, {"type": "name", "data": client_name})
         await self.connection.send_client(client_name, {"type": "state", "data": "WAIT"})
 
-        await self.send_server({"type": "player_join", "data": client_name})
+        await self.send_server({"type": "player_join", "data": {"name": client_name, "palette": palette_id}})
         await self.send_server({"type": "players", "data": list(self.players.keys())})
 
         if len(self.players) >= MAX_PLAYERS:
@@ -286,10 +286,10 @@ async def server_websocket_endpoint(websocket: WebSocket):
 
 
 @app.websocket("/ws/{client_name}")
-async def websocket_endpoint(websocket: WebSocket, client_name: str):
+async def websocket_endpoint(websocket: WebSocket, client_name: str, palette_id: str = "0_1"):
     try:
         # await connection.connect_client(client_name, websocket)
-        await game.player_join(client_name, websocket)
+        await game.player_join(client_name, websocket, palette_id)
     except ValueError as e:
         await websocket.accept()
         await websocket.send_json({"type": "error", "data": str(e)})

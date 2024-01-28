@@ -370,7 +370,7 @@
                                 console.log(`Message: ${JSON.stringify(j)}`);
                                 switch (j.type) {
                                     case "player_join":
-                                        jesters[j.data] = new Jester(j.data, Object.keys(jesters).length, "1_3");
+                                        jesters[j.data.name] = new Jester(j.data.name, Object.keys(jesters).length, j.data.palette);
                                         break
                                     case "players":
                                         data.players = j.data;

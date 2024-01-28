@@ -3,29 +3,212 @@
     <head>
         <title>Client - Jest Fest</title>
         <script src="static/script.js"></script>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Playfair Display">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Single Day">
+
+        <style>
+            body {
+                font-family: 'Playfair Display';
+                font-size: 64px;
+                background-image: url("/static/images/backgrounds/client/1.png");
+                background-repeat: repeat;
+                background-size: 50%;
+                width: 100%;
+            }
+
+            #title-image {
+                position: relative;
+                left: 10%;
+                margin: 0;
+                width: 80%;
+            }
+
+            #wrapper {
+                position: absolute;
+                left: 0;
+                right: 0;
+            }
+
+            #interaction {
+                margin: auto;
+                display: flex;
+                flex-direction: column;
+            }
+
+            #input-text {
+                font-family: 'Playfair Display';
+                font-size: 64px;
+                height: 400px;
+                margin: 16px;
+                display: none;
+            }
+
+            #input-name {
+                font-family: 'Playfair Display';
+                font-size: 64px;
+                height: 100px;
+                margin: 16px;
+            }
+
+            #submit {
+                font-family: 'Single Day';
+                font-size: 120px;
+                width: 50%;
+                text-align: center;
+                margin: 16px auto;
+                background-color: #BC352E;
+                color: #D17C2D;
+                font-weight: bold;
+                border: solid black 8px;
+                -webkit-text-stroke: black 4px;
+                border-radius: 64px;
+            }
+
+            #heading {
+                font-family: 'Single Day';
+                font-size: 120px;
+                margin: auto;
+                font-weight: bold;
+            }
+
+            #toast {
+                font-family: 'Single Day';
+                font-size: 120px;
+                margin: auto;
+            }
+
+            #color-preview {
+                display: flex;
+                flex-direction: row;
+            }
+
+            #color-preview img {
+                align-self:center;
+            }
+
+            #color-selectors {
+                display: flex;
+                flex-direction: row;
+                margin: auto;
+                height: 480px;
+            }
+
+            #color-selectors > div {
+                display: flex;
+                flex-direction: column;
+                flex-wrap: wrap;
+                /* border: 8px solid black; */
+                box-sizing: border-box;
+                margin: 8px;
+                /* align-self: center; */
+                /* width: 200px;
+                height: 500px; */
+            }
+
+            #color-selectors label {
+                margin: 4px;
+                box-sizing: border-box;
+                width: 80px;
+                height: 80px;
+                border-radius: 16px;
+                /* flex: 1 0; */
+            }
+
+            #color-selectors input[type="radio"]:checked+label {
+                border: solid black 8px;
+            }
+        </style>
     </head>
     <body>
-        <h1>Jest Fest Client</h1>
-        <div>
-            <h1 id="heading">Enter Name</h1>
-            <p id="toast">...</p>
-            <input type="text" id="input-text" autocomplete="off" />
-            <button id="submit">Submit</button>
+        <div id="wrapper">
+            <img src="/static/images/title/0.png" id="title-image">
+            <div id="interaction">
+                <h1 id="heading">Enter Name</h1>
+                <textarea type="text" id="input-text" autocomplete="off" maxlength="1000"></textarea>
+                <input type="text" id="input-name" autocomplete="off" minlength="1" maxlength="16" />
+                <div id="color-preview">
+                    <div id="color-selectors"></div>
+                    <img id="jester-preview"></img>
+                </div>
+                <button id="submit">Submit</button>
+                <p id="toast"></p>
+            </div>
         </div>
 
         <script>
             window.onload = async () => {
             // Elements
             let heading_element = document.getElementById("heading");
-            let toast_element = document.getElementById("toast")
+            let toast_element = document.getElementById("toast");
             let input_element = document.getElementById("input-text");
+            let name_element = document.getElementById("input-name");
+            let color_preview_element = document.getElementById("color-preview");
+            let jester_preview_element = document.getElementById("jester-preview");
             let submit_button = document.getElementById("submit");
+
+            // Set Up Color Selectors
+            let color_selectors_element = document.getElementById("color-selectors");
+            let update_selected_palette = () => {
+                let selected_palette_components = [];
+                for (palette_part of [1, 2]) {
+                    let radioButtonGroup = document.getElementsByName(`color-${palette_part}`);
+                    let checkedRadio = Array.from(radioButtonGroup).find(
+                        (radio) => radio.checked
+                    );
+                    let radio_id = checkedRadio.id.split("-")
+                    radio_id = radio_id[radio_id.length - 1];
+                    selected_palette_components[palette_part - 1] = radio_id;
+                }
+                let selected_palette_id = `${selected_palette_components[0]}_${selected_palette_components[1]}`;
+                console.log(selected_palette_id);
+                jester_preview_element.src = `/static/images/palettes/jesters/jesto/still/${selected_palette_id}/0.png`;
+                data.selected_palette = selected_palette_id;
+            };
+            let PALETTE_AVAILABLE_COLORS = [
+                "rgb(230, 230, 230)",
+                "rgb(103, 96, 79)",
+                "rgb(203, 47, 52)",
+                "rgb(246, 140, 30)",
+                "rgb(229, 213, 31)",
+                "rgb(117, 172, 72)",
+                "rgb(61, 163, 151)",
+                "rgb(95, 134, 201)",
+                "rgb(83, 73, 125)",
+                "rgb(211, 89, 185)",
+            ]
+            for (palette_part of [1, 2]) {
+                let palette_part_element = document.createElement("div");
+                let i = 0;
+                for (color of PALETTE_AVAILABLE_COLORS) {
+                    let radio = document.createElement("input");
+                    radio.type = "radio";
+                    radio.name = `color-${palette_part}`;
+                    radio.value = color;
+                    radio.id = `color-${palette_part}-${i}`;
+                    radio.style.display = "none";
+                    radio.addEventListener("change", update_selected_palette);
+                    palette_part_element.appendChild(radio);
+
+                    let radiolabel = document.createElement("label");
+                    radiolabel.htmlFor = radio.id;
+                    radiolabel.textContent = '';
+                    // radiolabel.style.display = "block";
+                    radiolabel.style.backgroundColor = color;
+                    palette_part_element.appendChild(radiolabel);
+                    i++;
+                }
+                color_selectors_element.appendChild(palette_part_element);
+                document.getElementById(`color-${palette_part}-${random_int(0, PALETTE_AVAILABLE_COLORS.length)}`).checked = true;
+            }
+
 
             // Local Variables
             let data = {
                 name: null,
-                ws: null
+                ws: null,
+                selected_palette: null
             }
+            update_selected_palette();
 
             // Helper Functions
             let toast = (message, color) => {
@@ -47,7 +230,7 @@
                         submit: async () => { 
                             console.log("NAME SUBMIT");
 
-                            let name = input_element.value;
+                            let name = name_element.value;
                             if (name == undefined || name == '' || name.length == 0)
                             {
                                 toast("Name can't be empty", "red");
@@ -55,7 +238,7 @@
                             }
                             name = encodeURIComponent(name.toUpperCase().replaceAll(" ", "_"));
 
-                            let ws = new WebSocket(`ws://${window.location.host}/ws/${name}`);
+                            let ws = new WebSocket(`ws://${window.location.host}/ws/${name}?palette_id=${data.selected_palette}`);
                             ws.onmessage = async e => {
                                 let j = JSON.parse(e.data);
                                 console.log(`Message: ${JSON.stringify(j)}`);
@@ -89,7 +272,14 @@
                         },
                         enter: async () => {
                             heading_element.textContent = "Enter Name";
-                            input_element.value = "";
+                            name_element.value = "";
+                            name_element.style.display = "block";
+                            input_element.style.display = "none";
+                            color_preview_element.style.display = "flex";
+                        },
+                        exit: async () => {
+                            name_element.style.display = "none";
+                            color_preview_element.style.display = "none";
                         }
                     }
                 ),
@@ -104,8 +294,6 @@
 
                         },
                         exit: async () => {
-                            input_element.style.display = "block";
-                            submit_button.style.display = "block";
                             toast("");
                         }
                     }
@@ -129,6 +317,8 @@
                         enter: async () => {
                             heading_element.textContent = "Enter Joke";
                             input_element.value = "";
+                            input_element.style.display = "block";
+                            submit_button.style.display = "block";
                         }
                     }
                 ),
