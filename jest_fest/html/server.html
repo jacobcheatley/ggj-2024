@@ -205,14 +205,12 @@
                 }
                 set image_path(value) {
                     this._image_path = value;
-                    this.draw();
                 }
                 get image_frame() {
                     return this._image_frame;
                 }
                 set image_frame(value) {
                     this._image_frame = value;
-                    this.draw();
                 }
 
                 set_position(x, y) {
@@ -221,20 +219,28 @@
                 }
 
                 draw() {
-                    this.show();
-                    if (this.palette == undefined)
-                        this.image_element.src = `/static/images/${this.image_path}/0_${this.image_frame}.png`;
-                    else
-                        this.image_element.src = `/static/images/palettes/${this.image_path}/${this.palette}/${this.image_frame}.png`
+                    requestAnimationFrame(() => {
+                        this.show();
+                            if (this.palette == undefined)
+                                this.image_element.src = `/static/images/${this.image_path}/0_${this.image_frame}.png`;
+                            else
+                                this.image_element.src = `/static/images/palettes/${this.image_path}/${this.palette}/${this.image_frame}.png`
+                        }
+                    )
                 }
 
                 start_loop(image_path, num_frames, ms) {
                     console.log(`Starting loop ${image_path}`);
+                    // console.log(new Date());
                     this.stop_loop();
                     let current_frame = 0;
                     this.loop_interval = setInterval(() => {
                         this.image_path = image_path;
                         this.image_frame = current_frame;
+                        this.image_element.style.display = "none";
+                        this.draw();
+                        this.image_element.style.display = "block";
+                        // console.log(`Frame ${this.name} ${image_path} ${current_frame} ${new Date()}`);
                         current_frame += 1;
                         current_frame %= num_frames;
                     }, ms);
@@ -243,14 +249,18 @@
                 start_one_shot(image_path, num_frames, ms) {
                     return new Promise((resolve, reject) => {
                         console.log(`Starting one shot ${image_path}`);
+                        // console.log(new Date());
                         this.stop_loop();
                         let current_frame = 0;
                         this.loop_interval = setInterval(() => {
                             this.image_path = image_path;
                             this.image_frame = current_frame;
+                            this.draw();
+                            // console.log(`Frame ${this.name} ${image_path} ${current_frame} ${new Date()}`);
                             current_frame += 1;
                             if (current_frame >= num_frames) {
                                 this.stop_loop();
+                                // console.log(`Stopped ${this.name} ${image_path} ${new Date()}`);
                                 resolve('');
                             }
                         }, ms);
@@ -265,6 +275,7 @@
                     this.stop_loop();
                     this.image_path = image_path;
                     this.image_frame = image_frame == undefined ? 0 : image_frame;
+                    this.draw();
                 }
 
                 show() {
@@ -513,7 +524,8 @@
                                 let player_joke = data.joke_data[player_name];
                                 console.log(`Player ${player_name}\nJoke ${JSON.stringify(player_joke)}`);
                                 // TODO: Opening animation
-                                await jesters[player_name].start_one_shot("jesters/jesto/open_scroll", 3, 200);
+                                jesters[player_name].set_image("jesters/jesto/open_scroll");
+                                await delay(400);
                                 console.log("Done opening scroll...")
                                 jesters[player_name].start_loop("jesters/jesto/reading", 3, 200);
                                 await speech.say(player_name, player_joke.joke_text, player_joke.joke_audio);

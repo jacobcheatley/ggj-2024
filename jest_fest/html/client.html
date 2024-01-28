@@ -333,6 +333,11 @@
                     state_machine.submit();
                 }
             });
+            name_element.addEventListener("keypress", (e) => {
+                if (e.key == 'Enter') {
+                    state_machine.submit();
+                }
+            });
             };
         </script>
     </body>
