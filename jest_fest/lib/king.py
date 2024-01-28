@@ -26,6 +26,7 @@ class King:
             messages=[{"role": "system", "content": self.system_prompt}, {"role": "user", "content": score_prompt}],
         )
         score_response = completion.choices[0].message
+        print("SCORE", score_response.content)
         try:
             score_dict = json.loads(score_response.content.split("Score:")[1])
         except Exception:
@@ -46,10 +47,11 @@ class King:
             model="gpt-3.5-turbo",
             messages=[{"role": "system", "content": self.system_prompt}, {"role": "user", "content": response_prompt}],
         )
-
         kings_response = completion.choices[0].message
+        print("RESPONSE", kings_response.content)
+
         try:
-            response_text = json.loads(kings_response.content.split("Response:")[1])
+            response_text = kings_response.content.split("Response:")[1].strip("\"'“” ")
         except Exception:
             response_text = f"I'm sorry, it appears I had a lapse of mind while thinking about your joke, and I'm not sure what feedback to give. Nevertheless, I bestow upon thee {points} points for your efforts."
 

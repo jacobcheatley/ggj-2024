@@ -375,19 +375,25 @@
                 new State(
                     "INIT",
                     {
-                        enter: async () => { 
+                        enter: async () => {
+                            for (player of data.players) {
+                                jesters[player].element.remove();
+                            }
                             data = {
-                                ws: null,
                                 players: [],
                                 players_submitted_jokes: {},
                                 joke_data: null,
                                 theme: null,
                                 winner: null,
                             }
+                            jesters = {};
 
                             heading_element.textContent = "Connecting...";
-                            submit_button.style.display = "inline-block";
+                            submit_button.style.display = "block";
                             submit_button.textContent = "Start";
+
+                            if (data.ws != null)
+                                return;
 
                             let ws = new WebSocket(`ws://${window.location.host}/ws_server`);
                             ws.onmessage = async e => {
@@ -482,9 +488,9 @@
                         enter: async () => {
                             data.ws.send(JSON.stringify({"type": "state_set", "data": "ASK_FOR_JOKES"}));
 
-                            submit_button.style.display = "none"; // Disabled skip button for now
+                            // submit_button.style.display = "none"; // Disabled skip button for now
                             submit_button.textContent = "Skip";
-                            heading_element.textContent = `Asking for Joke about ${data.theme}`;
+                            heading_element.textContent = `Tell a joke about ${data.theme}`;
                             king.start_loop("king/talking/neutral", 2, 200);
                             await speech.say("KING", `JESTERS! Tell me a joke about ${data.theme}.`, `/static/sound/theme_${data.theme}.mp3`);
                             king.hide();
@@ -558,6 +564,13 @@
                                     delay(random_int(2000, 5000)).then(() => jesters[player_name].start_one_shot("jesters/jesto/guillotine/drop", 5, 100));
                                 }
                             }
+
+                            submit_button.style.display = "block";
+                            submit_button.textContent = "Restart";
+                        },
+                        submit: async () => {
+                            data.ws.send(JSON.stringify({"type": "restart"}));
+                            // state_machine.transition("INIT");
                         }
                     }
                 )

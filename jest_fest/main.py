@@ -133,9 +133,10 @@ class Joke:
 
 
 class Game:
-    def __init__(self, connection: ConnectionManager, king: King) -> None:
+    def __init__(self, connection: ConnectionManager) -> None:
         self.connection = connection
-        self.king = king
+        self.king = King(AI_CONFIG_DIR)
+        save_tts_file(f"JESTERS! Tell me a joke about {self.king.theme}", KING_VOICE, f"theme_{self.king.theme}")
 
         self.server_state = "INIT"
         self.players: dict[str, Player] = {}
@@ -193,6 +194,8 @@ class Game:
                 await self.goto_tell_jokes()
             case {"type": "finished_tell_jokes"}:
                 await self.goto_execution()
+            case {"type": "restart"}:
+                await self.goto_restart()
 
     async def goto_game_start(self):
         await self.connection.send_server({"type": "state", "data": "START_GAME"})
@@ -216,6 +219,14 @@ class Game:
         await self.connection.send_server({"type": "set_winner", "data": winner.name})
         await self.connection.send_server({"type": "state", "data": "EXECUTION"})
 
+    async def goto_restart(self):
+        print("RESTARTING")
+        self.players = {}
+        self.player_jokes = {}
+        self.king = King(AI_CONFIG_DIR)
+        save_tts_file(f"JESTERS! Tell me a joke about {self.king.theme}", KING_VOICE, f"theme_{self.king.theme}")
+        await self.connection.send_server({"type": "state", "data": "INIT"})
+
     async def on_processed_joke(self, joke: Joke):
         self.player_jokes[joke.name] = joke
         if len(self.player_jokes) == len(self.players):
@@ -230,10 +241,8 @@ class Game:
                 await Joke(name, joke_text).process(self.king, self.on_processed_joke)
 
 
-king = King(AI_CONFIG_DIR)
-save_tts_file(f"JESTERS! Tell me a joke about {king.theme}", KING_VOICE, f"theme_{king.theme}")
 connection = ConnectionManager()
-game = Game(connection, king)
+game = Game(connection)
 app = FastAPI()
 
 
@@ -251,24 +260,21 @@ async def get_server():
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# @app.get("/palettes/{path:path}")
-# async def
 
+# @app.get("/images/{path:path}")
+# async def images(path: str):
+#     # print("GET IMAGE", request.url)
+#     redirect_path = path
+#     image_path = STATIC_DIR / "images" / path
+#     if not image_path.exists():
+#         image_stem = image_path.stem
+#         image_ext = image_path.suffix
+#         image_layer = image_stem.split("_")[0]
+#         image_path = image_path.with_name(f"{image_layer}{image_ext}")
+#         redirect_path = str(image_path.relative_to(STATIC_DIR / "images")).replace("\\", "/")
+#     # print("REDIRECTED TO", f"/static/images/{redirect_path}")
 
-@app.get("/images/{path:path}")
-async def images(path: str):
-    # print("GET IMAGE", request.url)
-    redirect_path = path
-    image_path = STATIC_DIR / "images" / path
-    if not image_path.exists():
-        image_stem = image_path.stem
-        image_ext = image_path.suffix
-        image_layer = image_stem.split("_")[0]
-        image_path = image_path.with_name(f"{image_layer}{image_ext}")
-        redirect_path = str(image_path.relative_to(STATIC_DIR / "images")).replace("\\", "/")
-    # print("REDIRECTED TO", f"/static/images/{redirect_path}")
-
-    return RedirectResponse(f"/static/images/{redirect_path}")
+#     return RedirectResponse(f"/static/images/{redirect_path}")
 
 
 @app.websocket("/ws_server")
