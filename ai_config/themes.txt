@@ -7,7 +7,6 @@ Fish
 Aliens
 Robots
 Pirates
-Ninjas
 Cowboys
 Vampires
 Werewolves
@@ -32,37 +31,18 @@ Doctors
 Lawyers
 Teachers
 Students
-Parents
-Grandparents
 Babies
-Teenagers
 Elderly
 Athletes
 Musicians
 Artists
 Actors
 Directors
-Writers
-Dancers
-Singers
 Composers
-Magicians
-Clowns
-Acrobats
-Jugglers
 Food
-Restaurants
-Cooking
-Baking
-Fast food
-Desserts
 Vegetables
 Fruits
 Sports
-Soccer
-Basketball
-Football
-Baseball
 Tennis
 Golf
 Swimming
@@ -72,9 +52,6 @@ Hiking
 Camping
 Gardening
 Farming
-Shopping
-Fashion
 Technology
 Gadgets
-Social media
 Internet
