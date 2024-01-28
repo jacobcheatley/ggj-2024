@@ -4,6 +4,7 @@
         <title>Server - Jest Fest</title>
         <script src="static/script.js"></script>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Playfair Display">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Single Day">
         <style>
             body {
                 font-family: 'Playfair Display';
@@ -18,7 +19,7 @@
                 /* background-color: red; */
             }
 
-            #game-background, #game-text, #game-jesters, #game-king {
+            #game-background, #game-jesters, #game-king {
                 position: absolute;
                 width: 100%;
                 height: 100%;
@@ -34,13 +35,18 @@
 
             #game-text {
                 text-align: center;
-                width: 100%;
-                pointer-events: all;
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                padding: 60px;
+                text-align: left;
+                display: flex;
             }
 
             #heading {
                 color: white;
                 font-size: 100px;
+                margin: 32px;
             }
 
             #toast {
@@ -101,6 +107,25 @@
                 font-weight: bold;
                 /* box-sizing: border-box; */
             }
+
+            #toast {
+                display: none;
+            }
+
+            #submit {
+                font-family: 'Single Day';
+                font-size: 120px;
+                /* width: 50%; */
+                text-align: center;
+                margin: 8px auto;
+                background-color: #BC352E;
+                color: #D17C2D;
+                font-weight: bold;
+                border: solid black 8px;
+                -webkit-text-stroke: black 1px;
+                border-radius: 64px;
+                align-self: center;
+            }
         </style>
     </head>
     <body>
@@ -108,9 +133,9 @@
         <div id="game-area">
             <div id="game-background"></div>
             <div id="game-text">
+                <button id="submit">Start</button>
                 <h1 id="heading">Connecting...</h1>
                 <p id="toast">...</p>
-                <button id="submit">Start</button>
             </div>
             <div id="game-jesters"></div>
             <div id="game-king"></div>
@@ -136,7 +161,7 @@
             window.addEventListener("click", clear_music_setup);
 
             // Constants
-            let MAX_PLAYERS = 3;
+            let MAX_PLAYERS = 6;
 
             // Elements
             let heading_element = document.getElementById("heading");
